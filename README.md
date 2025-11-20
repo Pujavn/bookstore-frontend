@@ -1,5 +1,17 @@
-# Vue 3 + Vite
+# Bookstore Frontend
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Vue 3 + Vite app that consumes the Gutenberg Bookstore API.
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+Features:
+- Category selection (Fiction, Drama, Humour, etc.)
+- Search on title/author while keeping category
+- Infinite scroll (IntersectionObserver)
+- Opens books in HTML → PDF → TXT order
+- Uses only books with cover images (mime_type=image)
+
+## Setup
+
+```bash
+npm install
+cp .env.example .env   # if you create one, or set VITE_API_URL directly
+npm run dev

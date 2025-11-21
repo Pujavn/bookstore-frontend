@@ -1,11 +1,13 @@
 <template>
   <div class="app">
-    <header class="app-header">
-      <h1>Gutenberg Project</h1>
-      <p class="subtitle">
-        A social cataloging website that allows you to freely search its
-        database of books, annotations, and reviews.
-      </p>
+    <header v-if="currentView === 'categories'" class="app-header">
+      <div class="app-header-inner">
+        <h1>Gutenberg Project</h1>
+        <p class="subtitle">
+          A social cataloging website that allows you to freely search its
+          database of books, annotations, and reviews.
+        </p>
+      </div>
     </header>
 
     <!-- Screen 1: Category selection -->
@@ -18,8 +20,17 @@
           class="category-button"
           @click="selectCategory(cat)"
         >
-          <img v-if="cat.icon" :src="cat.icon" alt="" class="category-icon" />
-          <span>{{ cat.label }}</span>
+          <div class="left">
+            <img v-if="cat.icon" :src="cat.icon" alt="" class="category-icon" />
+            <span>{{ cat.label }}</span>
+          </div>
+          <!-- in template -->
+          <img
+            src="/assets/icons/Next.svg"
+            alt=""
+            class="arrow-icon"
+            aria-hidden="true"
+          />
         </button>
       </div>
     </section>
@@ -28,7 +39,7 @@
     <section v-else class="books-view">
       <div class="books-header">
         <button class="back-btn" @click="goBack">
-          <img :src="BackIcon" alt="Back" class="back-icon" />
+          <img src="/assets/icons/Back.svg" alt="Back" class="back-icon" />
         </button>
         <div class="info">
           <h2>{{ selectedCategory?.label }} Books</h2>
@@ -41,11 +52,11 @@
 
       <!-- Search box: title + author (search param) -->
       <div class="search-bar">
-        <img :src="SearchIcon" alt="" class="search-icon" />
+        <img src="/assets/icons/Search.svg" alt="" class="search-icon" />
         <input v-model="searchQuery" type="text" placeholder="Search" />
         <img
           v-if="searchQuery"
-          :src="CancelIcon"
+          src="/assets/icons/Cancel.svg"
           alt=""
           class="clear-icon"
           @click="searchQuery = ''"
@@ -67,8 +78,9 @@
           <img
             v-if="book.coverImage"
             :src="book.coverImage"
-            alt="Cover"
+            :alt="`Cover image — ${book.title}`"
             class="book-cover"
+            loading="lazy"
           />
 
           <div class="book-info">
@@ -105,18 +117,6 @@
 </template>
 
 <script setup>
-// Icons
-import BackIcon from "./assets/icons/Back.svg";
-import FictionIcon from "./assets/icons/Fiction.svg";
-import DramaIcon from "./assets/icons/Drama.svg";
-import HumorIcon from "./assets/icons/Humour.svg";
-import HistoryIcon from "./assets/icons/History.svg";
-import AdventureIcon from "./assets/icons/Adventure.svg";
-import PoliticsIcon from "./assets/icons/Politics.svg";
-import PhilosophyIcon from "./assets/icons/Philosophy.svg";
-import SearchIcon from "./assets/icons/Search.svg";
-import CancelIcon from "./assets/icons/Cancel.svg";
-
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 
 // 🔗 Ignitesol Gutendex API base
@@ -125,13 +125,21 @@ import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 const BASE_URL = import.meta.env.VITE_API_URL;
 
 const categories = [
-  { label: "Fiction", value: "fiction", icon: FictionIcon },
-  { label: "Drama", value: "drama", icon: DramaIcon },
-  { label: "Humour", value: "humor", icon: HumorIcon },
-  { label: "Politics", value: "politics", icon: PoliticsIcon },
-  { label: "Philosophy", value: "philosophy", icon: PhilosophyIcon },
-  { label: "History", value: "history", icon: HistoryIcon },
-  { label: "Adventure", value: "adventure", icon: AdventureIcon },
+  { label: "Fiction", value: "fiction", icon: "/assets/icons/Fiction.svg" },
+  { label: "Drama", value: "drama", icon: "/assets/icons/Drama.svg" },
+  { label: "Humour", value: "humor", icon: "/assets/icons/Humour.svg" },
+  { label: "Politics", value: "politics", icon: "/assets/icons/Politics.svg" },
+  {
+    label: "Philosophy",
+    value: "philosophy",
+    icon: "/assets/icons/Philosophy.svg",
+  },
+  { label: "History", value: "history", icon: "/assets/icons/History.svg" },
+  {
+    label: "Adventure",
+    value: "adventure",
+    icon: "/assets/icons/Adventure.svg",
+  },
 ];
 
 const currentView = ref("categories"); // 'categories' | 'books'
@@ -159,6 +167,7 @@ const hasMore = computed(() => {
 });
 
 function selectCategory(cat) {
+  console.info("Selected category:", cat.value);
   selectedCategory.value = cat;
   currentView.value = "books";
   searchQuery.value = "";
@@ -219,72 +228,20 @@ function buildUrl(page = 1) {
     params.append("author", term);
   }
 
-  // Only books with cover images
   params.append("mime_type", "image");
 
   return `${BASE_URL}/books?${params.toString()}`;
 }
-// // Normalize Gutendex book to frontend shape
-// function normalizeBook(raw) {
-//   // coverImage: first image/* format
-//   let coverImage = null;
-//   if (raw.formats) {
-//     for (const [mime, url] of Object.entries(raw.formats)) {
-//       if (mime.startsWith("image/")) {
-//         coverImage = url;
-//         break;
-//       }
-//     }
-//   }
-
-//   return {
-//     id: raw.id,
-//     title: raw.title,
-//     authors: raw.authors?.map((a) => a.name) ?? [],
-//     languages: raw.languages ?? [],
-//     subjects: raw.subjects ?? [],
-//     download_count: raw.download_count ?? null,
-//     coverImage,
-//     formats: raw.formats || {},
-//   };
-// }
-// function normalizeBook(raw) {
-//   // Normalize formats (works for both Laravel + Gutendex)
-//   const formatsArray = normalizeFormats(raw.formats);
-
-//   // coverImage: first image/* format
-//   let coverImage = null;
-//   const imageFormat = formatsArray.find((f) =>
-//     f.mime_type.toLowerCase().startsWith("image/")
-//   );
-//   if (imageFormat) {
-//     coverImage = imageFormat.url;
-//   }
-
-//   return {
-//     id: raw.id,
-//     title: raw.title,
-//     authors:
-//       raw.authors?.map((a) => (typeof a === "string" ? a : a.name)) ?? [],
-//     languages: raw.languages ?? [],
-//     subjects: raw.subjects ?? [],
-//     download_count: raw.download_count ?? null,
-//     coverImage,
-//     // keep normalized formats so openBook() works for both backends
-//     formats: formatsArray,
-//   };
-// }
 
 function normalizeBook(raw) {
-  // Find first image format for cover
-  const imageFormat = raw.formats?.find(f => 
+  const imageFormat = raw.formats?.find((f) =>
     f.mime_type.toLowerCase().startsWith("image/")
   );
 
   return {
     id: raw.id,
     title: raw.title,
-    authors: raw.authors.map(a => a.name),
+    authors: raw.authors?.map(a => typeof a === 'string' ? a : a.name) ?? [],
     languages: raw.languages,
     subjects: raw.subjects,
     download_count: raw.download_count,
@@ -313,8 +270,8 @@ async function fetchBooks() {
     const newBooks = (data.results || []).map(normalizeBook);
     books.value = newBooks;
   } catch (e) {
-    console.error(e);
-    error.value = "Unable to load books. Please try again.";
+    console.error("fetchBooks error:", e);
+    e?.message || "Unable to load books. Please try again.";
   } finally {
     initialLoading.value = false;
   }
@@ -347,35 +304,6 @@ async function loadMore() {
     loadingMore.value = false;
   }
 }
-
-// // Open preferred format: HTML > PDF > TXT (formats is an object)
-// function openBook(book) {
-//   const formats = book.formats || {};
-
-//   let htmlUrl = null;
-//   let pdfUrl = null;
-//   let txtUrl = null;
-
-//   for (const [mime, url] of Object.entries(formats)) {
-//     const lower = mime.toLowerCase();
-
-//     if (!htmlUrl && lower.startsWith("text/html")) {
-//       htmlUrl = url;
-//     } else if (!pdfUrl && lower.includes("pdf")) {
-//       pdfUrl = url;
-//     } else if (!txtUrl && lower.startsWith("text/plain")) {
-//       txtUrl = url;
-//     }
-//   }
-
-//   const finalUrl = htmlUrl || pdfUrl || txtUrl;
-
-//   if (finalUrl) {
-//     window.open(finalUrl, "_blank");
-//   } else {
-//     alert("No viewable version available");
-//   }
-// }
 
 function openBook(book) {
   // Normalized into array: [{ mime_type, url }]

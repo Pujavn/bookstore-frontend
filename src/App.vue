@@ -181,28 +181,49 @@ function resetBooksState() {
   loadingMore.value = false;
 }
 
-// Build URL based on page + category + search
+// // Build URL based on page + category + search
+// function buildUrl(page = 1) {
+//   const params = new URLSearchParams();
+
+//   params.set("page", page.toString());
+
+//   // topic → category (subjects/bookshelves)
+//   if (selectedCategory.value?.value) {
+//     params.append("topic", selectedCategory.value.value);
+//   }
+
+//   // search → title + author (Gutendex behaviour)
+//   if (searchQuery.value.trim()) {
+//     params.append("search", searchQuery.value.trim());
+//   }
+
+//   // only books with cover images
+//   params.append("mime_type", "image");
+
+//   return `${BASE_URL}/books?${params.toString()}`;
+// }
+
 function buildUrl(page = 1) {
   const params = new URLSearchParams();
-
   params.set("page", page.toString());
 
-  // topic → category (subjects/bookshelves)
+  // Category → topic filter
   if (selectedCategory.value?.value) {
     params.append("topic", selectedCategory.value.value);
   }
 
-  // search → title + author (Gutendex behaviour)
+  // Search → send BOTH title and author (your Laravel backend supports this)
   if (searchQuery.value.trim()) {
-    params.append("search", searchQuery.value.trim());
+    const term = searchQuery.value.trim();
+    params.append("title", term);
+    params.append("author", term);
   }
 
-  // only books with cover images
+  // Only books with cover images
   params.append("mime_type", "image");
 
   return `${BASE_URL}/books?${params.toString()}`;
 }
-
 // // Normalize Gutendex book to frontend shape
 // function normalizeBook(raw) {
 //   // coverImage: first image/* format
@@ -227,30 +248,48 @@ function buildUrl(page = 1) {
 //     formats: raw.formats || {},
 //   };
 // }
-function normalizeBook(raw) {
-  // Normalize formats (works for both Laravel + Gutendex)
-  const formatsArray = normalizeFormats(raw.formats);
+// function normalizeBook(raw) {
+//   // Normalize formats (works for both Laravel + Gutendex)
+//   const formatsArray = normalizeFormats(raw.formats);
 
-  // coverImage: first image/* format
-  let coverImage = null;
-  const imageFormat = formatsArray.find((f) =>
+//   // coverImage: first image/* format
+//   let coverImage = null;
+//   const imageFormat = formatsArray.find((f) =>
+//     f.mime_type.toLowerCase().startsWith("image/")
+//   );
+//   if (imageFormat) {
+//     coverImage = imageFormat.url;
+//   }
+
+//   return {
+//     id: raw.id,
+//     title: raw.title,
+//     authors:
+//       raw.authors?.map((a) => (typeof a === "string" ? a : a.name)) ?? [],
+//     languages: raw.languages ?? [],
+//     subjects: raw.subjects ?? [],
+//     download_count: raw.download_count ?? null,
+//     coverImage,
+//     // keep normalized formats so openBook() works for both backends
+//     formats: formatsArray,
+//   };
+// }
+
+function normalizeBook(raw) {
+  // Find first image format for cover
+  const imageFormat = raw.formats?.find(f => 
     f.mime_type.toLowerCase().startsWith("image/")
   );
-  if (imageFormat) {
-    coverImage = imageFormat.url;
-  }
 
   return {
     id: raw.id,
     title: raw.title,
-    authors:
-      raw.authors?.map((a) => (typeof a === "string" ? a : a.name)) ?? [],
-    languages: raw.languages ?? [],
-    subjects: raw.subjects ?? [],
-    download_count: raw.download_count ?? null,
-    coverImage,
-    // keep normalized formats so openBook() works for both backends
-    formats: formatsArray,
+    authors: raw.authors.map(a => a.name),
+    languages: raw.languages,
+    subjects: raw.subjects,
+    download_count: raw.download_count,
+    coverImage: imageFormat ? imageFormat.url : null,
+    formats: raw.formats || [],
   };
 }
 
@@ -269,7 +308,7 @@ async function fetchBooks() {
     if (!res.ok) throw new Error("Failed to fetch books");
 
     const data = await res.json();
-    total.value = data.count ?? null;
+    total.value = data.count;
 
     const newBooks = (data.results || []).map(normalizeBook);
     books.value = newBooks;

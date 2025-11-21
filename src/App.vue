@@ -88,17 +88,6 @@
             <p class="book-authors" v-if="book.authors?.length">
               {{ book.authors.join(", ") }}
             </p>
-            <p class="book-meta">
-              <span v-if="book.languages?.length">
-                Lang: {{ book.languages.join(", ") }}
-              </span>
-              <span v-if="book.download_count">
-                · Downloads: {{ book.download_count }}
-              </span>
-            </p>
-            <p class="book-tags" v-if="book.subjects?.length">
-              {{ book.subjects.slice(0, 2).join(" • ") }}
-            </p>
           </div>
         </article>
 
@@ -189,28 +178,6 @@ function resetBooksState() {
   initialLoading.value = false;
   loadingMore.value = false;
 }
-
-// // Build URL based on page + category + search
-// function buildUrl(page = 1) {
-//   const params = new URLSearchParams();
-
-//   params.set("page", page.toString());
-
-//   // topic → category (subjects/bookshelves)
-//   if (selectedCategory.value?.value) {
-//     params.append("topic", selectedCategory.value.value);
-//   }
-
-//   // search → title + author (Gutendex behaviour)
-//   if (searchQuery.value.trim()) {
-//     params.append("search", searchQuery.value.trim());
-//   }
-
-//   // only books with cover images
-//   params.append("mime_type", "image");
-
-//   return `${BASE_URL}/books?${params.toString()}`;
-// }
 
 function buildUrl(page = 1) {
   const params = new URLSearchParams();
